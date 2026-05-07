@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import YearSelect from '@/components/player-compare/common/YearSelect.vue'
+
+const season = ref(new Date().getFullYear())
+
 const playerA = {
   initials: 'SO',
   number: 17,
@@ -20,8 +25,6 @@ const playerB = {
   height: '201cm',
   accent: 'dirt',
 }
-
-const season = '2025'
 
 type League = 'AL' | 'NL'
 const leagueA = 'AL' as League
@@ -95,12 +98,7 @@ const stats = [
 
         <!-- Year (center, aligned with VS) -->
         <div class="flex items-center justify-center">
-          <div class="relative inline-flex h-8.5 w-fit items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>{{ season }} 賽季</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
-          </div>
+          <YearSelect v-model="season" />
         </div>
 
         <!-- Player B selectors -->
