@@ -7,7 +7,7 @@
 預設體驗：
 - 打者模式：大谷 翔平 vs Aaron Judge
 - 投手模式：Tarik Skubal vs Paul Skenes
-- 預設年份：2026
+- 預設年份：當前年（`new Date().getFullYear()`）
 - 預設版型：v1 記分板
 - 預設主題：淺色
 
@@ -79,7 +79,7 @@ localStorage key 命名：待定。
 |---|---|---|
 | playerA | Shohei Ohtani | Tarik Skubal |
 | playerB | Aaron Judge | Paul Skenes |
-| yearA / yearB | 2026 / 2026 | 2026 / 2026 |
+| yearA / yearB | 當前年 / 當前年 | 當前年 / 當前年 |
 | leagueA / leagueB | ALL / ALL | ALL / ALL |
 | teamA / teamB | ALL / ALL | ALL / ALL |
 
@@ -108,6 +108,13 @@ localStorage key 命名：待定。
 - 折線圖（年度趨勢）
 - 球員照片授權處理（先用 MLB 提供的 headshot URL）
 
+## 共用元件
+
+- `YearSelect`（`src/components/player-compare/common/YearSelect.vue`）
+  - `v-model` 接 `number`（年份）
+  - 內部生成 1876 ~ 當前年的選項，由新到舊
+  - 三種版型共用
+
 ## 待定項目（總表）
 
 - 投打 mode 的 UI 樣式
@@ -117,7 +124,7 @@ localStorage key 命名：待定。
 - API 失敗時的 UI 表現
 - 球員下拉的排序方式（背號 / 名字 / 球隊）
 - mode 切換是否動畫過渡
-- 年份下拉是否要限制在球員出道後（目前決定：不限制）
+- 年份下拉是否要限制在球員出道後（目前決定：不限制，1876 ~ 當前年全開）
 
 ## 相關文件
 

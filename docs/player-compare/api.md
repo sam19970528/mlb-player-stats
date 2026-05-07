@@ -46,13 +46,24 @@ GET /api/v1/teams/{teamId}/roster?rosterType=active&season={year}
 {
   "roster": [
     {
-      "person": { "id": 660271, "fullName": "Shohei Ohtani" },
+      "person": { "id": 660271, "fullName": "Shohei Ohtani", "link": "..." },
       "jerseyNumber": "17",
-      "position": { "abbreviation": "TWP", "type": "Two-Way Player" }
+      "position": {
+        "code": "10",
+        "name": "Designated Hitter",
+        "type": "Two-Way Player",
+        "abbreviation": "TWP"
+      },
+      "status": { "code": "A", "description": "Active" }
     }
   ]
 }
 ```
+
+實測注意：
+- `status.code` 不一定是 `A`，會出現 `RL`（Released）、傷兵名單等狀態
+- 一隊 active roster 實際可能 60+ 人（含已釋出仍掛在系統內的）
+- 規格決定不過濾，已釋出的也照樣列出來
 
 ### 3. 取得球員打擊數據
 
@@ -60,7 +71,7 @@ GET /api/v1/teams/{teamId}/roster?rosterType=active&season={year}
 GET /api/v1/people/{playerId}/stats?stats=season&season={year}&group=hitting
 ```
 
-回傳結構：
+回傳結構（前端只用以下欄位）：
 ```jsonc
 {
   "stats": [{
@@ -81,7 +92,10 @@ GET /api/v1/people/{playerId}/stats?stats=season&season={year}&group=hitting
 }
 ```
 
-無資料時 `splits` 為空陣列。
+實測注意：
+- 實際 `stat` 物件回 30+ 欄位（`obp`、`slg`、`atBats`、`plateAppearances`、`age`、`gamesPlayed` 等），上表只列前端用得到的
+- 比率類欄位（`avg`、`ops`、`obp`、`slg`）回**字串**（`".282"`）；計數類（`hits`、`homeRuns`）回 **number**
+- 無資料時整個 `stats` 是空陣列 `[]`，**不是 `splits` 為空**。前端解析需處理 `stats[0]` 不存在的情況
 
 ### 4. 取得球員投球數據
 
@@ -93,6 +107,12 @@ GET /api/v1/people/{playerId}/stats?stats=season&season={year}&group=pitching
 ```
 era, whip, strikeOuts, inningsPitched, wins, losses, saves, baseOnBalls, homeRuns, earnedRuns, gamesPlayed
 ```
+
+實測注意：
+- `era`、`whip`、`inningsPitched` 回**字串**（`"2.21"`、`"0.89"`、`"195.1"`）
+- `inningsPitched` 的 `.1` / `.2` 是出局數（1/3、2/3 局），**不是十進位小數**，不要轉 number
+- 其他計數類（`strikeOuts`、`wins`、`losses`、`saves`）回 **number**
+- 實際 `stat` 物件同樣回 50+ 欄位，前端只取上面這些
 
 ### 5. 球員大頭照
 
@@ -123,8 +143,9 @@ https://img.mlbstatic.com/mlb-photos/image/upload/w_{width},q_auto:best/v1/peopl
 
 ## 年份 / 賽季範圍
 
-- API 從 1901 開始都有資料，球隊數會隨歷史變化（1901 = 16 隊、現在 = 30 隊）
-- 前端策略：年份下拉開放任一年，球員 + 年份組合無資料就顯示 `—`（依規格 spec）
+- API 實測最早 **1876 年**（National League 成立年）就有資料，再往前回 0 隊
+- 球隊數會隨歷史變化：1876 = 8 隊、1901 = 16 隊、現在 = 30 隊
+- 前端策略：年份下拉開放 **1876 ~ 當前年**（用 `new Date().getFullYear()` 動態算），球員 + 年份組合無資料就顯示 `—`（依規格 spec）
 
 ## CORS 確認結果
 
