@@ -4,8 +4,11 @@ import ScoreboardLayout from '@/components/player-compare/layouts/ScoreboardLayo
 // 全部靜態：mode / layout 切換的 active 狀態先寫死
 type Mode = 'batting' | 'pitching'
 type Layout = 'v1' | 'v2' | 'v3'
+type League = 'AL' | 'NL'
 const mode = 'batting' as Mode
 const layout = 'v1' as Layout
+const leagueA = 'AL' as League
+const leagueB = 'AL' as League
 
 const playerA = { fullName: '大谷 翔平', team: 'LAD', number: 17, accent: 'grass' as const }
 const playerB = { fullName: 'Aaron Judge', team: 'NYY', number: 99, accent: 'dirt' as const }
@@ -15,14 +18,17 @@ const season = '2025'
 <template>
   <div class="min-h-screen bg-paper font-sans text-ink">
     <!-- Control Bar -->
-    <header class="sticky top-0 z-10 border-b border-[#d8d6c8] bg-white px-5 py-3.5 md:px-6 md:py-4">
+    <header class="sticky top-0 z-10 border-b border-[#d8d6c8] bg-white px-5 py-3.5 md:px-12 md:py-7">
       <!-- Top row: brand + mode toggle + layout toggle -->
-      <div class="flex flex-col items-stretch gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+      <div class="flex flex-col items-stretch gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-4">
         <!-- Brand -->
-        <div class="flex items-center gap-2.5">
-          <div class="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-grass to-dirt font-mono text-[13px] font-bold text-white md:h-7 md:w-7">
-            ⚾
-          </div>
+        <div class="flex items-center gap-2.5 md:justify-self-start">
+          <svg viewBox="0 0 128 128" class="h-7 w-7 md:h-8 md:w-8">
+            <path fill="#d7ccc6" d="m77.01 40.42l-57.2 61.21s18.24 21.91 47.37 20.59c20.04-.91 32.06-8.38 41.9-19.68c12.02-13.81 14.73-34.07 14.03-43.36c-.91-12.02-9.11-27.69-15.49-32.43S77.01 40.42 77.01 40.42" />
+            <path fill="#f1edec" d="M25.09 20.93C6.13 37.8-6.4 76.1 19.81 101.63c14.03 13.66 59.93 14.35 81.79-14.25c10.27-13.43 18.51-34.44 12.94-51.15c-2.19-6.56-8.07-11.27-13.3-15.67C76.1-.57 48.23.34 25.09 20.93" />
+            <path fill="#979892" d="m69.67 124.09l-3.89-.32c.08-.37 8.18-36.77-15.5-60.63c-10.52-10.6-20.21-15.5-28.81-14.55c-8.96.98-14.92 9.28-14.96 9.36l-1.84-3.73c.23-.36 5.51-8.41 16.37-9.6c9.88-1.07 20.67 4.21 32.09 15.71c25.24 25.45 16.9 62.18 16.54 63.76M122 60.81c-.27-.18-26.56-18.79-40.13-30.37C69.67 20.04 53.5 5.51 53.35 5.36l2.81-1.76c.15.14 15.72 13.95 27.88 24.32c13.45 11.47 38.66 29.54 38.93 29.72z" />
+            <path fill="#ed520a" d="M68.35 16.25c-.5.53-1.79 4.39-2.29 6.54c-.29 1.23-.11 3.14 1.43 3.39c1.72.29 2.37-.7 2.9-2.17s1.47-4.13 1.47-4.13s2.74-.91 4.09-1.31c1.8-.53 2.33-1.27 2.37-2.21s-.94-2.7-3.97-2c-1.87.44-5.27 1.11-6 1.89m-8.84-7.46c-.43.35-2.49 5.36-2.82 5.99c-.34.63-.55 2.24.63 2.92s2.47-.49 2.92-1.49c.44-1 1.73-3.97 1.73-3.97s3.15-.17 4.28-.33c1.38-.19 2.43-.57 2.35-2.16s-2.65-1.47-5.3-1.3c-1.67.1-3.5.1-3.79.34m-6.17-5.78c-.72.33-3.52 3.19-3.89 3.68s-.65 1.55.29 2.29s2.25.12 2.94-.37c.7-.49 2-2.09 2-2.09s2.7.04 3.48.08s1.8-.57 1.8-1.8s-1.43-1.72-2.62-1.76c-1.18-.03-3.55-.24-4-.03m26.32 22.65c-.66.52-2.28 6.33-2.62 7.5s-.89 3.67.84 4.21c1.82.57 3.04-.24 3.58-2.3c.5-1.9 1.64-5.87 1.64-5.87s4.37-1.61 5.33-1.98s2.07-1.59 1.4-3.09s-2.58-1.31-3.52-.97c.01.01-6.01 2-6.65 2.5m11.28 9.68c-.46.6-2 5.97-2.25 7.08c-.25 1.1-.24 2.86 1.51 3.31c1.43.37 2.58-.37 2.9-1.72c.54-2.24 1.72-5.48 1.72-5.48s3.11-1.76 4.29-2.37c1.19-.61 1.72-2.29.98-3.48s-2.41-1.02-4.05-.45c-1.63.58-4.69 2.58-5.1 3.11m11.19 8.44c-.58.87-.74 6.01-.74 6.79s.57 2.82 2.41 2.82c1.64 0 2.33-1.76 2.33-2.66s.2-4.38.2-4.38s2.11-1.12 2.86-1.64c1.02-.7 2.17-2 1.43-3.39s-2.7-.98-3.97-.45c-.89.39-4.11 2.3-4.52 2.91m10.24 8.31c-.36.87-.38 5.72-.3 7.03s1.19 2.45 2.62 2.41s2.09-1.39 2.04-2.45s.08-4.54.08-4.54s1.9-1.32 2.41-1.68c.78-.53.94-1.8.25-2.78c-.7-.98-2.13-1.27-3.48-.49s-3.48 2.15-3.62 2.5m7.59 5.43c-.65 1.12-.04 6.22-.04 6.71s.16 2.17 1.84 2.17c1.47 0 1.96-.9 2-1.72s-.08-5.44-.08-5.44s1.43-.45.82-2.33c-.61-1.87-3.86-.55-4.54.61m-57.32 63.89c-.56.99-.44 2.29 1.67 3.35c2.12 1.06 2.55 1.12 3 1.15c.79.04 2.6-.57 3.79-1.23c.95-.53 2.12-1.32 1.28-2.86c-.78-1.44-5.02.26-5.02.26s-3.75-2.38-4.72-.67m-.27-9.03c-1.17 1.08-.4 2.69 1.98 4.23c2.12 1.37 3.31 2.38 4.23 2.38s4.39-1.75 5.29-2.25c1.37-.75 1.81-2.25.75-3.31s-2.56.04-3.31.44s-2.47 1.23-2.47 1.23s-2.25-1.63-3-2.16s-2.32-1.62-3.47-.56m-1.14-11.08c-.96 1.44-.4 2.95 1.89 4.23s5.16 2.42 6.08 2.56s4.54-3 5.24-3.66s2.64-2.73 1.41-4.14c-1.47-1.68-3.04-.4-4.45.57c-1.08.74-2.34 1.67-2.34 1.67s-2.42-.66-3.83-1.32c-1.4-.66-3.12-1.23-4 .09m5.71-11.75s2.51-2.6 3.44-3.48s2.51-1.76 3.7-.35s-.04 3.53-1.15 4.54s-3.92 4.32-4.72 4.45s-6.65-.93-8.33-1.81c-.99-.52-2.56-1.5-1.67-3.48c.73-1.64 2.38-1.45 3.61-1.19s5.12 1.32 5.12 1.32m-5.98-14.14s2.12-4.32 2.82-5.86c.71-1.54 1.59-2.95 3.57-2.25s1.38 2.57.71 4.36c-.79 2.12-3 7.71-3.97 8.2c-1.18.59-7.4.79-9.56.75c-.97-.02-2.07-.71-2.03-2.03s.86-2.24 3-2.6c1.32-.22 5.46-.57 5.46-.57m-9.78-14.28c-.22.13-4.77 1.96-5.91 2.29c-1.67.48-2.25 2.16-1.89 3.35s1.98 1.81 3.88 1.23c1.89-.57 7.62-2.03 8.15-2.86s1.41-6.74 1.59-8.28s.22-3.48-1.81-3.79s-2.86 1.06-3.04 2.51c-.11.89-.97 5.55-.97 5.55m-12.26-9.89s.35-4.01.48-5.2s.57-2.78 2.64-2.64s1.85 2.82 1.85 4.54s-.4 6.21-.66 6.43s-3.04 2.38-4.49 3.35s-3.79 1.62-4.67.3s.4-3.38 1.81-4.44s3.04-2.34 3.04-2.34M26.25 37.75c-2.04.51-1.94 2.64-1.32 4.8s.97 3.92.97 3.92s-1.45 2.25-2.07 3.04s-2.56 3.13-.53 4.8s4.01-1.28 4.76-2.16c.73-.85 3.13-4.05 3.13-4.49c0-1.28-1.32-5.99-1.63-7.01s-1.02-3.47-3.31-2.9m-14.64 3.37c-.91.62-1.37 2.51-.22 4.14c.94 1.34 1.63 2.73 1.63 2.73s-1.23 3.57-1.72 4.72s-1.06 3.66.97 4.45s3.44-1.41 3.97-3.04s1.94-5.29 1.98-6.39c.03-.73-1.89-4.32-2.73-5.55s-2.51-1.98-3.88-1.06M8.26 53.68c.23 1.05-.35 4.01-.93 6.52c-.17.74-.42 2.4-2.51 1.89c-1.81-.44-1.06-2.73-.84-3.88c.13-.68.66-2.86.66-2.86s-.96-.52-.93-1.63c.04-1.45.79-1.94 1.98-2.03s2.39 1.2 2.57 1.99" />
+          </svg>
           <div class="flex items-baseline gap-2">
             <span class="text-[15px] font-bold tracking-tight text-ink">球員數據對戰</span>
             <span class="font-mono text-[10px] tracking-[0.18em] text-[#7a7a70]">PLAYER COMPARE</span>
@@ -30,10 +36,13 @@ const season = '2025'
         </div>
 
         <!-- Mode toggle -->
-        <div class="relative inline-flex rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+        <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
           <span
-            class="absolute bottom-1 top-1 left-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
-            :style="{ width: 'calc(50% - 4px)', left: mode === 'batting' ? '4px' : 'calc(50% + 0px)' }"
+            class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+            :style="{
+              width: 'calc(50% - 8px)',
+              left: mode === 'batting' ? '4px' : 'calc(50% + 4px)',
+            }"
           />
           <button
             type="button"
@@ -52,12 +61,17 @@ const season = '2025'
         </div>
 
         <!-- Layout toggle -->
-        <div class="relative inline-flex rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+        <div class="relative grid grid-cols-3 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1 md:justify-self-end">
           <span
-            class="absolute bottom-1 top-1 left-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+            class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
             :style="{
-              width: 'calc(33.333% - 3px)',
-              left: layout === 'v1' ? '4px' : layout === 'v2' ? 'calc(33.333% + 1px)' : 'calc(66.666% + 0px)',
+              width: 'calc(33.333% - 8px)',
+              left:
+                layout === 'v1'
+                  ? '4px'
+                  : layout === 'v2'
+                    ? 'calc(33.333% + 4px)'
+                    : 'calc(66.666% + 4px)',
             }"
           />
           <button
@@ -65,64 +79,76 @@ const season = '2025'
             class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-2 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors md:px-4"
             :class="layout === 'v1' ? 'text-paper' : 'text-[#5a5a52]'"
           >
-            01 · 記分板
+            記分板
           </button>
           <button
             type="button"
             class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-2 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors md:px-4"
             :class="layout === 'v2' ? 'text-paper' : 'text-[#5a5a52]'"
           >
-            02 · 卡片
+            卡片
           </button>
           <button
             type="button"
             class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-2 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors md:px-4"
             :class="layout === 'v3' ? 'text-paper' : 'text-[#5a5a52]'"
           >
-            03 · 球場
+            球場
           </button>
         </div>
       </div>
 
-      <!-- Bottom row: Player A | YEAR | Player B -->
-      <div class="mt-3 grid grid-cols-1 items-center gap-3 border-t border-dashed border-[#ebe9dd] pt-3 md:grid-cols-[1fr_auto_1fr] md:gap-3.5">
+      <!-- Bottom row: Player A | YEAR | Player B — hidden, selectors moved into ScoreboardLayout -->
+      <div v-if="false" class="mt-3 grid grid-cols-1 gap-4 border-t border-dashed border-[#ebe9dd] px-3 pb-3 pt-3">
         <!-- Player A controls -->
-        <div class="flex flex-wrap items-center justify-start gap-2">
-          <span class="font-mono text-[10px] tracking-[0.18em] text-muted">A</span>
+        <div class="flex flex-col items-center gap-2">
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <!-- League segmented (AL / NL) -->
+            <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+              <span
+                class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+                :style="{
+                  width: 'calc(50% - 8px)',
+                  left: leagueA === 'AL' ? '4px' : 'calc(50% + 4px)',
+                }"
+              />
+              <button
+                type="button"
+                class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+                :class="leagueA === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+              >
+                AL
+              </button>
+              <button
+                type="button"
+                class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+                :class="leagueA === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+              >
+                NL
+              </button>
+            </div>
 
-          <!-- League select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>全部</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
-          </div>
+            <!-- Team select -->
+            <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+              <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+                <option>全部球隊</option>
+              </select>
+              <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            </div>
 
-          <!-- Team select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] pl-2 pr-3">
-            <span class="mr-2 rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-paper">
-              ALL
-            </span>
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>全部球隊</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
-          </div>
-
-          <!-- Player select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] pl-3 pr-3">
-            <span class="mr-2 inline-block h-2 w-2 rounded-full bg-grass" />
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>{{ playerA.fullName }} · {{ playerA.team }} · #{{ playerA.number }}</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            <!-- Player select -->
+            <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+              <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+                <option>{{ playerA.fullName }}</option>
+              </select>
+              <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            </div>
           </div>
         </div>
 
         <!-- Year (center) -->
-        <div class="flex items-center justify-center gap-2 px-2 md:border-x md:border-[#ebe9dd]">
-          <span class="font-mono text-[10px] tracking-[0.18em] text-muted">YEAR</span>
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+        <div class="flex items-center justify-center gap-2 md:px-2 md:border-x md:border-[#ebe9dd]">
+          <div class="relative inline-flex h-8.5 w-fit items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
             <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
               <option>{{ season }} 賽季</option>
             </select>
@@ -131,36 +157,49 @@ const season = '2025'
         </div>
 
         <!-- Player B controls -->
-        <div class="flex flex-wrap items-center justify-end gap-2">
-          <!-- Player select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] pl-3 pr-3">
-            <span class="mr-2 inline-block h-2 w-2 rounded-full bg-dirt" />
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>{{ playerB.fullName }} · {{ playerB.team }} · #{{ playerB.number }}</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
-          </div>
+        <div class="flex flex-col items-center gap-2">
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <!-- League segmented (AL / NL) -->
+            <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+              <span
+                class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+                :style="{
+                  width: 'calc(50% - 8px)',
+                  left: leagueB === 'AL' ? '4px' : 'calc(50% + 4px)',
+                }"
+              />
+              <button
+                type="button"
+                class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+                :class="leagueB === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+              >
+                AL
+              </button>
+              <button
+                type="button"
+                class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+                :class="leagueB === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+              >
+                NL
+              </button>
+            </div>
 
-          <!-- Team select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] pl-2 pr-3">
-            <span class="mr-2 rounded bg-ink px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wider text-paper">
-              ALL
-            </span>
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>全部球隊</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
-          </div>
+            <!-- Team select -->
+            <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+              <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+                <option>全部球隊</option>
+              </select>
+              <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            </div>
 
-          <!-- League select -->
-          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
-            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
-              <option>全部</option>
-            </select>
-            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            <!-- Player select -->
+            <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+              <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+                <option>{{ playerB.fullName }}</option>
+              </select>
+              <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+            </div>
           </div>
-
-          <span class="font-mono text-[10px] tracking-[0.18em] text-muted">B</span>
         </div>
       </div>
     </header>

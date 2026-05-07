@@ -23,6 +23,12 @@ const playerB = {
 
 const season = '2025'
 
+type League = 'AL' | 'NL'
+const leagueA = 'AL' as League
+const leagueB = 'AL' as League
+
+const handLabel = (hand: string) => (hand === 'L' ? '左' : '右')
+
 const stats = [
   { labelEn: 'AVG', labelTw: '打擊率', valueA: '.298', valueB: '.305', winner: 'B' },
   { labelEn: 'H', labelTw: '安打', valueA: '178', valueB: '165', winner: 'A' },
@@ -33,41 +39,9 @@ const stats = [
 </script>
 
 <template>
-  <section class="bg-paper p-9 font-sans text-ink md:p-10">
-    <!-- Topbar -->
-    <header class="mb-5 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div
-          class="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-grass to-dirt font-mono text-sm font-bold text-white"
-        >
-          ⚾
-        </div>
-        <span class="font-mono text-[11px] tracking-[0.22em] text-[#5a5a52]">
-          FRONTEND PORTFOLIO · COMPARE 01
-        </span>
-      </div>
-      <div class="hidden gap-2 md:flex">
-        <span class="rounded-full border border-ink bg-ink px-3 py-1.5 font-mono text-[11px] tracking-[0.15em] text-paper">
-          {{ season }}
-        </span>
-        <span class="rounded-full border border-[#d6d3c5] px-3 py-1.5 font-mono text-[11px] tracking-[0.15em] text-[#5a5a52]">
-          BATTING
-        </span>
-        <span class="rounded-full border border-[#d6d3c5] px-3 py-1.5 font-mono text-[11px] tracking-[0.15em] text-[#5a5a52]">
-          {{ stats.length }} CATEGORIES
-        </span>
-      </div>
-    </header>
-
-    <h2 class="mt-3 text-3xl font-bold tracking-tight">
-      球員數據對決
-      <span class="ml-2 text-xl font-normal text-muted">
-        Player Head-to-Head · {{ season }}
-      </span>
-    </h2>
-
+  <section class="bg-paper p-4 font-sans text-ink md:px-12 md:py-10">
     <!-- Scoreboard card -->
-    <div class="relative mt-5 overflow-hidden rounded-2xl border border-hairline bg-white p-6 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.12)] md:p-9">
+    <div class="relative overflow-hidden rounded-2xl border border-hairline bg-white p-6 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.12)] md:p-9">
       <!-- decorative gradient grain -->
       <div
         class="pointer-events-none absolute inset-0"
@@ -77,44 +51,135 @@ const stats = [
         }"
       />
 
+      <!-- Selectors row — aligned with hero columns -->
+      <div class="relative mb-5 grid grid-cols-[1fr_50px_1fr] items-center gap-2 md:grid-cols-[1fr_100px_1fr] md:gap-6">
+        <!-- Player A selectors -->
+        <div class="flex flex-wrap items-center justify-start gap-2">
+          <!-- League segmented (AL / NL) -->
+          <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+            <span
+              class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+              :style="{
+                width: 'calc(50% - 8px)',
+                left: leagueA === 'AL' ? '4px' : 'calc(50% + 4px)',
+              }"
+            />
+            <button
+              type="button"
+              class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+              :class="leagueA === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+            >
+              AL
+            </button>
+            <button
+              type="button"
+              class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+              :class="leagueA === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+            >
+              NL
+            </button>
+          </div>
+          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+              <option>全部球隊</option>
+            </select>
+            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+          </div>
+          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+              <option>{{ playerA.fullName }}</option>
+            </select>
+            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+          </div>
+        </div>
+
+        <!-- Year (center, aligned with VS) -->
+        <div class="flex items-center justify-center">
+          <div class="relative inline-flex h-8.5 w-fit items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+              <option>{{ season }} 賽季</option>
+            </select>
+            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+          </div>
+        </div>
+
+        <!-- Player B selectors -->
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <!-- League segmented (AL / NL) -->
+          <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
+            <span
+              class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
+              :style="{
+                width: 'calc(50% - 8px)',
+                left: leagueB === 'AL' ? '4px' : 'calc(50% + 4px)',
+              }"
+            />
+            <button
+              type="button"
+              class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+              :class="leagueB === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+            >
+              AL
+            </button>
+            <button
+              type="button"
+              class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
+              :class="leagueB === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+            >
+              NL
+            </button>
+          </div>
+          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+              <option>全部球隊</option>
+            </select>
+            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+          </div>
+          <div class="relative inline-flex h-8.5 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+            <select class="appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none">
+              <option>{{ playerB.fullName }}</option>
+            </select>
+            <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Hero: player A | VS | player B -->
-      <div class="relative mb-7 grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_100px_1fr]">
+      <div class="relative mb-5 grid grid-cols-[1fr_50px_1fr] items-center gap-2 md:mb-7 md:grid-cols-[1fr_100px_1fr] md:gap-6">
         <!-- Player A -->
-        <div class="flex items-center gap-5 md:flex-row">
-          <div class="relative h-22 w-22 flex-shrink-0 rounded-full bg-grass shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] flex items-center justify-center font-mono text-3xl font-bold text-white">
+        <div class="flex items-center gap-3 md:gap-5">
+          <div class="relative h-12 w-12 flex-shrink-0 rounded-full bg-grass shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] flex items-center justify-center font-mono text-base font-bold text-white md:h-22 md:w-22 md:text-3xl">
             {{ playerA.initials }}
-            <span class="absolute -bottom-2 -right-2 rounded border-2 border-white bg-ink px-1.5 py-0.5 font-mono text-[11px] text-paper">
+            <span class="absolute -bottom-1.5 -right-1.5 rounded border-2 border-white bg-ink px-1 py-0.5 font-mono text-[9px] text-paper md:-bottom-2 md:-right-2 md:px-1.5 md:text-[11px]">
               #{{ playerA.number }}
             </span>
           </div>
-          <div>
-            <h3 class="text-2xl font-bold leading-tight tracking-tight">{{ playerA.fullName }}</h3>
-            <div class="mt-1 font-mono text-xs tracking-[0.18em] text-[#7a7a70]">{{ playerA.romaji }}</div>
-            <div class="mt-2 font-mono text-[11px] tracking-wider text-muted">
-              B/T {{ playerA.bats }}/{{ playerA.throws }} · {{ playerA.height }}
+          <div class="min-w-0 whitespace-nowrap">
+            <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerA.fullName }}</h3>
+            <div class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
+              {{ handLabel(playerA.bats) }}打{{ handLabel(playerA.throws) }}投 · {{ playerA.height }}
             </div>
           </div>
         </div>
 
         <!-- VS -->
         <div class="text-center">
-          <div class="text-3xl font-extrabold tracking-tighter opacity-85 md:text-4xl">VS</div>
-          <div class="mt-1 font-mono text-[10px] tracking-[0.22em] text-muted">SEASON {{ season }}</div>
+          <div class="text-lg font-extrabold tracking-tighter opacity-85 md:text-4xl">VS</div>
+          <div class="mt-0.5 font-mono text-[9px] tracking-[0.22em] text-muted md:mt-1 md:text-[10px]">SEASON {{ season }}</div>
         </div>
 
         <!-- Player B -->
-        <div class="flex items-center gap-5 md:flex-row-reverse md:text-right">
-          <div class="relative h-22 w-22 flex-shrink-0 rounded-full bg-dirt shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] flex items-center justify-center font-mono text-3xl font-bold text-white">
+        <div class="flex flex-row-reverse items-center gap-2 text-right md:gap-5">
+          <div class="relative h-12 w-12 flex-shrink-0 rounded-full bg-dirt shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] flex items-center justify-center font-mono text-base font-bold text-white md:h-22 md:w-22 md:text-3xl">
             {{ playerB.initials }}
-            <span class="absolute -bottom-2 -right-2 rounded border-2 border-white bg-ink px-1.5 py-0.5 font-mono text-[11px] text-paper">
+            <span class="absolute -bottom-1.5 -right-1.5 rounded border-2 border-white bg-ink px-1 py-0.5 font-mono text-[9px] text-paper md:-bottom-2 md:-right-2 md:px-1.5 md:text-[11px]">
               #{{ playerB.number }}
             </span>
           </div>
-          <div>
-            <h3 class="text-2xl font-bold leading-tight tracking-tight">{{ playerB.fullName }}</h3>
-            <div class="mt-1 font-mono text-xs tracking-[0.18em] text-[#7a7a70]">{{ playerB.romaji }}</div>
-            <div class="mt-2 font-mono text-[11px] tracking-wider text-muted">
-              B/T {{ playerB.bats }}/{{ playerB.throws }} · {{ playerB.height }}
+          <div class="min-w-0">
+            <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerB.fullName }}</h3>
+            <div class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
+              {{ handLabel(playerB.bats) }}打{{ handLabel(playerB.throws) }}投 · {{ playerB.height }}
             </div>
           </div>
         </div>
@@ -125,45 +190,48 @@ const stats = [
         <div
           v-for="row in stats"
           :key="row.labelEn"
-          class="grid grid-cols-[1fr_90px_1fr] items-center bg-panel md:grid-cols-[1fr_140px_1fr]"
+          class="grid grid-cols-[1fr_70px_1fr] items-center bg-panel md:grid-cols-[1fr_140px_1fr]"
         >
           <!-- Player A value -->
           <div
-            class="flex items-center justify-end gap-2.5 px-4 py-4 font-mono text-2xl font-bold tabular-nums tracking-tight md:px-6 md:text-3xl"
+            class="flex items-center justify-end gap-1.5 px-3 py-2.5 font-mono text-xl font-bold tabular-nums tracking-tight md:gap-2.5 md:px-6 md:py-4 md:text-3xl"
             :class="row.winner === 'A' ? 'text-grass' : 'text-[#c5c2b3]'"
           >
             {{ row.valueA }}
-            <span
+            <svg
               v-if="row.winner === 'A'"
-              class="inline-block h-1.5 w-1.5 rounded-full bg-[oklch(0.6_0.18_145)] shadow-[0_0_0_3px_oklch(0.6_0.18_145/0.18)]"
-            />
+              viewBox="0 0 64 64"
+              class="h-3.5 w-3.5 flex-shrink-0 self-center md:h-4 md:w-4"
+            >
+              <circle cx="32" cy="32" r="30" class="fill-grass" />
+              <path fill="#fff" d="m20 17.5l3.8 16.6l.8 4.6l.8-4.5l3.3-16.7h6.4l3.4 16.6l.9 4.6l.9-4.4l3.9-16.8h6.2l-8.2 29h-5.8l-3.5-17l-1-5.6l-1 5.6l-3.5 17h-5.6l-8.2-29z" />
+            </svg>
           </div>
 
           <!-- Center label -->
-          <div class="border-x border-hairline bg-white px-2 py-3.5 text-center font-mono">
-            <div class="text-[10px] tracking-[0.22em] text-[#7a7a70]">{{ row.labelEn }}</div>
-            <div class="mt-0.5 font-sans text-[11px] font-medium text-[#3a3a35]">{{ row.labelTw }}</div>
+          <div class="border-x border-hairline bg-white px-1.5 py-2.5 text-center font-mono md:px-2 md:py-3.5">
+            <div class="text-[9px] tracking-[0.22em] text-[#7a7a70] md:text-[10px]">{{ row.labelEn }}</div>
+            <div class="mt-0.5 font-sans text-[10px] font-medium text-[#3a3a35] md:text-[11px]">{{ row.labelTw }}</div>
           </div>
 
           <!-- Player B value -->
           <div
-            class="flex items-center justify-start gap-2.5 px-4 py-4 font-mono text-2xl font-bold tabular-nums tracking-tight md:px-6 md:text-3xl"
-            :class="row.winner === 'B' ? 'text-dirt' : 'text-[#c5c2b3]'"
+            class="flex items-center justify-start gap-1.5 px-3 py-2.5 font-mono text-xl font-bold tabular-nums tracking-tight md:gap-2.5 md:px-6 md:py-4 md:text-3xl"
+            :class="row.winner === 'B' ? 'text-grass' : 'text-[#c5c2b3]'"
           >
-            <span
-              v-if="row.winner === 'B'"
-              class="inline-block h-1.5 w-1.5 rounded-full bg-[oklch(0.6_0.18_145)] shadow-[0_0_0_3px_oklch(0.6_0.18_145/0.18)]"
-            />
             {{ row.valueB }}
+            <svg
+              v-if="row.winner === 'B'"
+              viewBox="0 0 64 64"
+              class="h-3.5 w-3.5 flex-shrink-0 self-center md:h-4 md:w-4"
+            >
+              <circle cx="32" cy="32" r="30" class="fill-grass" />
+              <path fill="#fff" d="m20 17.5l3.8 16.6l.8 4.6l.8-4.5l3.3-16.7h6.4l3.4 16.6l.9 4.6l.9-4.4l3.9-16.8h6.2l-8.2 29h-5.8l-3.5-17l-1-5.6l-1 5.6l-3.5 17h-5.6l-8.2-29z" />
+            </svg>
           </div>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="mt-4 flex items-center justify-between pt-3 font-mono text-[10px] tracking-[0.18em] text-muted">
-        <span>· DEMO DATA · NOT REAL STATS</span>
-        <span>{{ stats.length }} CATEGORIES · UPDATED {{ season }}</span>
-      </div>
     </div>
   </section>
 </template>
