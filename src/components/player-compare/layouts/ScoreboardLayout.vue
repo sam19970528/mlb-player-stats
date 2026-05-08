@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import YearSelect from '@/components/player-compare/common/YearSelect.vue'
 import {
+  fetchBattingStats,
   fetchRoster,
   fetchTeams,
 } from '@/api/mlb'
@@ -20,6 +21,14 @@ interface RosterItem {
   person: { id: number; fullName: string }
   jerseyNumber: string
   position: { abbreviation: string }
+}
+
+interface BattingStat {
+  avg: string
+  hits: number
+  homeRuns: number
+  baseOnBalls: number
+  ops: string
 }
 
 // TODO: mode 之後接到實際切換 ref
@@ -48,6 +57,9 @@ const selectedTeamA = ref<number | null>(null)
 const selectedTeamB = ref<number | null>(null)
 const selectedPlayerA = ref<number | null>(null)
 const selectedPlayerB = ref<number | null>(null)
+
+const statA = ref<BattingStat | null>(null)
+const statB = ref<BattingStat | null>(null)
 
 const leagueFullName = (l: League) =>
   l === 'AL' ? 'American League' : 'National League'
@@ -105,6 +117,33 @@ const reloadRoster = async (
   }
 }
 
+const reloadStat = async (
+  playerId: number | null,
+  statRef: typeof statA,
+) => {
+  if (playerId == null) {
+    statRef.value = null
+    return
+  }
+  try {
+    const res = await fetchBattingStats(playerId, season.value)
+    statRef.value = res.stats?.[0]?.splits?.[0]?.stat ?? null
+  } catch (err) {
+    console.error(err)
+    statRef.value = null
+  }
+}
+
+watch(leagueA, () => {
+  if (initialLoad) return
+  selectedTeamA.value = null
+})
+
+watch(leagueB, () => {
+  if (initialLoad) return
+  selectedTeamB.value = null
+})
+
 watch(selectedTeamA, async (newId) => {
   if (initialLoad) return
   selectedPlayerA.value = null
@@ -117,6 +156,42 @@ watch(selectedTeamB, async (newId) => {
   selectedPlayerB.value = null
   rosterB.value = []
   await reloadRoster(newId, rosterB)
+})
+
+watch(selectedPlayerA, (newId) => {
+  if (initialLoad) return
+  reloadStat(newId, statA)
+})
+
+watch(selectedPlayerB, (newId) => {
+  if (initialLoad) return
+  reloadStat(newId, statB)
+})
+
+watch(season, async (newSeason) => {
+  if (initialLoad) return
+  // 兩側 roster 重抓、若原球員不在新 roster → selectedPlayer = null
+  await Promise.all([
+    reloadRoster(selectedTeamA.value, rosterA),
+    reloadRoster(selectedTeamB.value, rosterB),
+  ])
+  if (
+    selectedPlayerA.value != null &&
+    !rosterA.value.some((r) => r.person.id === selectedPlayerA.value)
+  ) {
+    selectedPlayerA.value = null
+  }
+  if (
+    selectedPlayerB.value != null &&
+    !rosterB.value.some((r) => r.person.id === selectedPlayerB.value)
+  ) {
+    selectedPlayerB.value = null
+  }
+  // 重抓兩側 stats（若 selectedPlayer 還在 → 抓新年份；若被清空 → reloadStat 內部會設成 null）
+  await Promise.all([
+    reloadStat(selectedPlayerA.value, statA),
+    reloadStat(selectedPlayerB.value, statB),
+  ])
 })
 
 onMounted(async () => {
@@ -136,6 +211,11 @@ onMounted(async () => {
 
     selectedPlayerA.value = DEFAULT_BATTING_PAIR.a.playerId
     selectedPlayerB.value = DEFAULT_BATTING_PAIR.b.playerId
+
+    await Promise.all([
+      reloadStat(DEFAULT_BATTING_PAIR.a.playerId, statA),
+      reloadStat(DEFAULT_BATTING_PAIR.b.playerId, statB),
+    ])
   } catch (err) {
     console.error(err)
   } finally {
@@ -149,13 +229,35 @@ const playerBMeta = { bats: 'R', throws: 'R', height: '201cm' }
 
 const handLabel = (hand: string) => (hand === 'L' ? '左' : '右')
 
-const stats = [
-  { labelEn: 'AVG', labelTw: '打擊率', valueA: '.298', valueB: '.305', winner: 'B' },
-  { labelEn: 'H', labelTw: '安打', valueA: '178', valueB: '165', winner: 'A' },
-  { labelEn: 'HR', labelTw: '全壘打', valueA: '51', valueB: '48', winner: 'A' },
-  { labelEn: 'BB', labelTw: '四壞球', valueA: '95', valueB: '121', winner: 'B' },
-  { labelEn: 'OPS', labelTw: 'OPS', valueA: '1.012', valueB: '1.084', winner: 'B' },
-] as const
+type StatKey = 'avg' | 'hits' | 'homeRuns' | 'baseOnBalls' | 'ops'
+
+const STAT_ROWS: { key: StatKey; labelEn: string; labelTw: string }[] = [
+  { key: 'avg', labelEn: 'AVG', labelTw: '打擊率' },
+  { key: 'hits', labelEn: 'H', labelTw: '安打' },
+  { key: 'homeRuns', labelEn: 'HR', labelTw: '全壘打' },
+  { key: 'baseOnBalls', labelEn: 'BB', labelTw: '四壞球' },
+  { key: 'ops', labelEn: 'OPS', labelTw: 'OPS' },
+]
+
+const toNumber = (v: string | number) =>
+  typeof v === 'number' ? v : parseFloat(v)
+
+const stats = computed(() =>
+  STAT_ROWS.map((row) => {
+    const rawA = statA.value?.[row.key]
+    const rawB = statB.value?.[row.key]
+    const valueA = rawA != null ? String(rawA) : '-'
+    const valueB = rawB != null ? String(rawB) : '-'
+    let winner: 'A' | 'B' | null = null
+    if (rawA != null && rawB != null) {
+      const numA = toNumber(rawA)
+      const numB = toNumber(rawB)
+      if (numA > numB) winner = 'A'
+      else if (numB > numA) winner = 'B'
+    }
+    return { ...row, valueA, valueB, winner }
+  }),
+)
 </script>
 
 <template>
@@ -188,6 +290,7 @@ const stats = [
               type="button"
               class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
               :class="leagueA === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+              @click="leagueA = 'AL'"
             >
               AL
             </button>
@@ -195,6 +298,7 @@ const stats = [
               type="button"
               class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
               :class="leagueA === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+              @click="leagueA = 'NL'"
             >
               NL
             </button>
@@ -245,6 +349,7 @@ const stats = [
               type="button"
               class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
               :class="leagueB === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
+              @click="leagueB = 'AL'"
             >
               AL
             </button>
@@ -252,6 +357,7 @@ const stats = [
               type="button"
               class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors"
               :class="leagueB === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
+              @click="leagueB = 'NL'"
             >
               NL
             </button>
@@ -366,7 +472,7 @@ const stats = [
       <div class="overflow-hidden rounded-xl border border-hairline bg-hairline">
         <div
           v-for="row in stats"
-          :key="row.labelEn"
+          :key="row.key"
           class="grid grid-cols-[1fr_70px_1fr] items-center bg-panel md:grid-cols-[1fr_140px_1fr]"
         >
           <!-- Player A value -->
