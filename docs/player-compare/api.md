@@ -35,11 +35,16 @@ GET /api/v1/teams?sportId=1&season={year}
 
 辨識聯盟用 `league.name`：`American League` / `National League`。
 
-### 2. 取得球隊現役名單（含位置）
+### 2. 取得球隊 40 人名單（含位置）
 
 ```
-GET /api/v1/teams/{teamId}/roster?rosterType=active&season={year}
+GET /api/v1/teams/{teamId}/roster?rosterType=40Man&season={year}
 ```
+
+`rosterType` 用 `40Man` 而非 `active`：
+- `active` 只列實際在大聯盟出賽的 25-26 人，**傷兵（IL）會被排除**
+- `40Man` 是 MLB 正式 40 人名單，包含 IL、60-day IL、選擇權派下小聯盟的球員，但不含純小聯盟
+- 用 `40Man` 才能在傷兵期間（如 Skubal 進 15-day IL）也找得到球員
 
 回傳結構：
 ```jsonc

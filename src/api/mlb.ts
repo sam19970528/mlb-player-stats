@@ -13,10 +13,10 @@ export function fetchTeams(season: number) {
   return getJson(`${BASE}/teams?sportId=1&season=${season}`)
 }
 
-// 取得某隊某季的現役名單（含背號、守位）
+// 取得某隊某季的 40 人名單（含 IL，不含小聯盟）
 export function fetchRoster(teamId: number, season: number) {
   return getJson(
-    `${BASE}/teams/${teamId}/roster?rosterType=active&season=${season}`,
+    `${BASE}/teams/${teamId}/roster?rosterType=40Man&season=${season}`,
   )
 }
 
