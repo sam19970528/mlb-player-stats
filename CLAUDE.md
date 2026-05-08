@@ -40,3 +40,4 @@
 - 不改與當前任務無關的程式碼
 - 不加入未來才需要的抽象層
 - 不在 commit 訊息加 Co-Authored-By
+- **本專案 commit 前不跑 prettier**（覆蓋全域規則）
