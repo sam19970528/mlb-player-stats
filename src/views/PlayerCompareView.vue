@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import ScoreboardLayout from '@/components/player-compare/layouts/ScoreboardLayout.vue'
+import { usePlayerCompareStore } from '@/stores/playerCompare'
 
-// 全部靜態：mode / layout 切換的 active 狀態先寫死
-type Mode = 'batting' | 'pitching'
 type Layout = 'v1' | 'v2' | 'v3'
 type League = 'AL' | 'NL'
-const mode = 'batting' as Mode
 const layout = 'v1' as Layout
 const leagueA = 'AL' as League
 const leagueB = 'AL' as League
+
+const store = usePlayerCompareStore()
+const { mode } = storeToRefs(store)
 
 const playerA = { fullName: '大谷 翔平', team: 'LAD', number: 17, accent: 'grass' as const }
 const playerB = { fullName: 'Aaron Judge', team: 'NYY', number: 99, accent: 'dirt' as const }
@@ -48,6 +50,7 @@ const season = '2025'
             type="button"
             class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-4 py-2 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors md:px-5"
             :class="mode === 'batting' ? 'text-paper' : 'text-[#5a5a52]'"
+            @click="mode = 'batting'"
           >
             打者 BATTING
           </button>
@@ -55,6 +58,7 @@ const season = '2025'
             type="button"
             class="relative z-1 cursor-pointer whitespace-nowrap border-0 bg-transparent px-4 py-2 font-mono text-[11px] font-bold tracking-[0.15em] transition-colors md:px-5"
             :class="mode === 'pitching' ? 'text-paper' : 'text-[#5a5a52]'"
+            @click="mode = 'pitching'"
           >
             投手 PITCHING
           </button>

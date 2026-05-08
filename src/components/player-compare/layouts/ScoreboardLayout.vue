@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import YearSelect from '@/components/player-compare/common/YearSelect.vue'
 import {
   fetchBattingStats,
+  fetchPitchingStats,
   fetchRoster,
   fetchTeams,
 } from '@/api/mlb'
-import { DEFAULT_BATTING_PAIR } from '@/constants/player-compare'
+import {
+  DEFAULT_BATTING_PAIR,
+  DEFAULT_PITCHING_PAIR,
+} from '@/constants/player-compare'
+import { usePlayerCompareStore, type Mode } from '@/stores/playerCompare'
 
 type League = 'AL' | 'NL'
-type Mode = 'batting' | 'pitching'
 
 interface Team {
   id: number
@@ -31,8 +36,18 @@ interface BattingStat {
   ops: string
 }
 
-// TODO: mode 之後接到實際切換 ref
-const mode = ref<Mode>('batting')
+interface PitchingStat {
+  era: string
+  whip: string
+  strikeOuts: number
+  inningsPitched: string
+  wins: number
+}
+
+type Stat = BattingStat | PitchingStat
+
+const store = usePlayerCompareStore()
+const { mode } = storeToRefs(store)
 
 const filterRosterByMode = (roster: RosterItem[], m: Mode) => {
   if (m === 'batting') {
@@ -58,8 +73,8 @@ const selectedTeamB = ref<number | null>(null)
 const selectedPlayerA = ref<number | null>(null)
 const selectedPlayerB = ref<number | null>(null)
 
-const statA = ref<BattingStat | null>(null)
-const statB = ref<BattingStat | null>(null)
+const statA = ref<Stat | null>(null)
+const statB = ref<Stat | null>(null)
 
 const leagueFullName = (l: League) =>
   l === 'AL' ? 'American League' : 'National League'
@@ -125,8 +140,10 @@ const reloadStat = async (
     statRef.value = null
     return
   }
+  const fetcher =
+    mode.value === 'batting' ? fetchBattingStats : fetchPitchingStats
   try {
-    const res = await fetchBattingStats(playerId, season.value)
+    const res = await fetcher(playerId, season.value)
     statRef.value = res.stats?.[0]?.splits?.[0]?.stat ?? null
   } catch (err) {
     console.error(err)
@@ -168,7 +185,39 @@ watch(selectedPlayerB, (newId) => {
   reloadStat(newId, statB)
 })
 
-watch(season, async (newSeason) => {
+const loadSeed = async (m: Mode) => {
+  const pair = m === 'batting' ? DEFAULT_BATTING_PAIR : DEFAULT_PITCHING_PAIR
+  leagueA.value = pair.a.league as League
+  leagueB.value = pair.b.league as League
+  selectedTeamA.value = pair.a.teamId
+  selectedTeamB.value = pair.b.teamId
+  const [rosterARes, rosterBRes] = await Promise.all([
+    fetchRoster(pair.a.teamId, season.value),
+    fetchRoster(pair.b.teamId, season.value),
+  ])
+  rosterA.value = rosterARes.roster ?? []
+  rosterB.value = rosterBRes.roster ?? []
+  selectedPlayerA.value = pair.a.playerId
+  selectedPlayerB.value = pair.b.playerId
+  await Promise.all([
+    reloadStat(pair.a.playerId, statA),
+    reloadStat(pair.b.playerId, statB),
+  ])
+}
+
+watch(mode, async (m) => {
+  if (initialLoad) return
+  initialLoad = true
+  try {
+    await loadSeed(m)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    initialLoad = false
+  }
+})
+
+watch(season, async () => {
   if (initialLoad) return
   // 兩側 roster 重抓、若原球員不在新 roster → selectedPlayer = null
   await Promise.all([
@@ -198,24 +247,7 @@ onMounted(async () => {
   try {
     const teamsRes = await fetchTeams(season.value)
     teams.value = teamsRes.teams ?? []
-
-    selectedTeamA.value = DEFAULT_BATTING_PAIR.a.teamId
-    selectedTeamB.value = DEFAULT_BATTING_PAIR.b.teamId
-
-    const [rosterARes, rosterBRes] = await Promise.all([
-      fetchRoster(DEFAULT_BATTING_PAIR.a.teamId, season.value),
-      fetchRoster(DEFAULT_BATTING_PAIR.b.teamId, season.value),
-    ])
-    rosterA.value = rosterARes.roster ?? []
-    rosterB.value = rosterBRes.roster ?? []
-
-    selectedPlayerA.value = DEFAULT_BATTING_PAIR.a.playerId
-    selectedPlayerB.value = DEFAULT_BATTING_PAIR.b.playerId
-
-    await Promise.all([
-      reloadStat(DEFAULT_BATTING_PAIR.a.playerId, statA),
-      reloadStat(DEFAULT_BATTING_PAIR.b.playerId, statB),
-    ])
+    await loadSeed(mode.value)
   } catch (err) {
     console.error(err)
   } finally {
@@ -229,9 +261,14 @@ const playerBMeta = { bats: 'R', throws: 'R', height: '201cm' }
 
 const handLabel = (hand: string) => (hand === 'L' ? '左' : '右')
 
-type StatKey = 'avg' | 'hits' | 'homeRuns' | 'baseOnBalls' | 'ops'
+interface StatRow {
+  key: string
+  labelEn: string
+  labelTw: string
+  lowerIsBetter?: boolean
+}
 
-const STAT_ROWS: { key: StatKey; labelEn: string; labelTw: string }[] = [
+const BATTING_ROWS: StatRow[] = [
   { key: 'avg', labelEn: 'AVG', labelTw: '打擊率' },
   { key: 'hits', labelEn: 'H', labelTw: '安打' },
   { key: 'homeRuns', labelEn: 'HR', labelTw: '全壘打' },
@@ -239,25 +276,36 @@ const STAT_ROWS: { key: StatKey; labelEn: string; labelTw: string }[] = [
   { key: 'ops', labelEn: 'OPS', labelTw: 'OPS' },
 ]
 
+const PITCHING_ROWS: StatRow[] = [
+  { key: 'wins', labelEn: 'W', labelTw: '勝場' },
+  { key: 'inningsPitched', labelEn: 'IP', labelTw: '局數' },
+  { key: 'era', labelEn: 'ERA', labelTw: '防禦率', lowerIsBetter: true },
+  { key: 'whip', labelEn: 'WHIP', labelTw: 'WHIP', lowerIsBetter: true },
+  { key: 'strikeOuts', labelEn: 'K', labelTw: '三振' },
+]
+
 const toNumber = (v: string | number) =>
   typeof v === 'number' ? v : parseFloat(v)
 
-const stats = computed(() =>
-  STAT_ROWS.map((row) => {
-    const rawA = statA.value?.[row.key]
-    const rawB = statB.value?.[row.key]
+const stats = computed(() => {
+  const rows = mode.value === 'batting' ? BATTING_ROWS : PITCHING_ROWS
+  return rows.map((row) => {
+    const rawA = (statA.value as Record<string, string | number> | null)?.[row.key]
+    const rawB = (statB.value as Record<string, string | number> | null)?.[row.key]
     const valueA = rawA != null ? String(rawA) : '-'
     const valueB = rawB != null ? String(rawB) : '-'
     let winner: 'A' | 'B' | null = null
     if (rawA != null && rawB != null) {
       const numA = toNumber(rawA)
       const numB = toNumber(rawB)
-      if (numA > numB) winner = 'A'
-      else if (numB > numA) winner = 'B'
+      if (numA !== numB) {
+        const aWins = row.lowerIsBetter ? numA < numB : numA > numB
+        winner = aWins ? 'A' : 'B'
+      }
     }
     return { ...row, valueA, valueB, winner }
-  }),
-)
+  })
+})
 </script>
 
 <template>
