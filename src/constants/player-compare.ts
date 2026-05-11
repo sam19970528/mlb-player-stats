@@ -1,6 +1,6 @@
 export const DEFAULT_BATTING_PAIR = {
-  a: { teamId: 119, playerId: 660271, league: 'NL' }, // LAD / Ohtani
-  b: { teamId: 147, playerId: 592450, league: 'AL' }, // NYY / Judge
+  a: { teamId: 147, playerId: 592450, league: 'AL' }, // NYY / Judge
+  b: { teamId: 119, playerId: 660271, league: 'NL' }, // LAD / Ohtani
 } as const
 
 export const DEFAULT_PITCHING_PAIR = {
