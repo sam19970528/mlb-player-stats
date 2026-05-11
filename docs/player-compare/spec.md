@@ -2,131 +2,153 @@
 
 ## 功能概述
 
-兩位 MLB 球員並列比較數據的工具。支援打者 / 投手雙模式、跨年份比較、三種 UI 版型切換、深淺色主題，所有操作即時記錄到 localStorage。
+兩位 MLB 球員並列比較數據的工具。支援打者 / 投手雙模式、跨年份切換、台灣球迷視角中文化（球隊名、聯盟名）。
 
-預設體驗：
-- 打者模式：大谷 翔平 vs Aaron Judge
-- 投手模式：Tarik Skubal vs Paul Skenes
-- 預設年份：當前年（`new Date().getFullYear()`）
-- 預設版型：v1 記分板
-- 預設主題：淺色
+- mode 綁路由：`/batting`、`/pitching`
+- season、兩側球員選擇記錄到 localStorage（依 mode 分別存）
+- 預設體驗（首次進站）：
+  - 打者：Aaron Judge（美聯／紐約洋基） vs Shohei Ohtani（國聯／洛杉磯道奇）
+  - 投手：Tarik Skubal（美聯／底特律老虎） vs Paul Skenes（國聯／匹茲堡海盜）
+  - 年份：當前年（`new Date().getFullYear()`）
 
-## 使用者流程
+## 路由
 
-### 首次進站
-1. 偵測 localStorage 是否有狀態
-2. 無 → 寫入完整預設 state（mode / 球員 A / 球員 B / 年份 A / 年份 B / 版型 / 主題 / 兩邊各自的聯盟 + 球隊）
-3. 有 → 讀取後 restore
-
-### 操作
-- 任何狀態變動 → 立即寫回 localStorage
-- 切換 mode（打者 ↔ 投手）→ 球員池整個換、預設值用該 mode 的預設
-- 切換聯盟 → 該側的球隊重置為「全部」
-- 切換球隊 → 該側的球員下拉重新打 roster API
-- 切換年份 → 重打 stats API
-- 切換版型 / 主題 → 純 UI，不打 API
-
-### 跨年份比較
-A、B 兩側各自有獨立的年份下拉（例：A=2025 大谷 vs B=2023 Judge）。
-
-## UI 版型
-
-設計參考：handoff bundle 內的 `mlb/project/MLB Player Compare.html` 與三個變體 jsx。
-
-| 版型 | 名稱 | 視覺重點 |
-|---|---|---|
-| v1 | Stadium Scoreboard | 列表對沖、等寬大數字、中央標籤 |
-| v2 | Side-by-Side Cards | 雙球員卡片、長條圖左右對沖 |
-| v3 | Diamond Dashboard | 棒球場視角、雷達圖中心、四角資訊卡 |
-
-三種版型都要做手機版，邊做邊調整。
-
-## 控制列
-
-| 項目 | UI 樣式 |
+| Path | 對應 mode |
 |---|---|
-| 投打 mode | 待定 |
-| 聯盟（AL / NL） | 膠囊按鈕 + active 樣式 |
-| 球隊 | 下拉選單 |
-| 球員 | 下拉選單 |
-| 年份 | 下拉選單（左右各一） |
-| 版型切換 | 待定（設計稿是膠囊按鈕） |
-| 主題切換 | 待定 |
+| `/` | redirect 到 `/batting` |
+| `/batting` | 打者 |
+| `/pitching` | 投手 |
+
+route.meta.mode 決定 store.mode。URL 是 mode 的 source of truth；切按鈕會 `router.push`。
 
 ## 狀態管理
 
-使用 **Pinia + pinia-plugin-persistedstate**，state 自動同步到 localStorage，不用手動 watch。
+Pinia + pinia-plugin-persistedstate。
 
-### State 欄位
+### Store 結構
 
+```ts
+{
+  mode: 'batting' | 'pitching'         // 不 persist（由 URL 控）
+  season: number                        // persist
+  batting: ModeSelection                // persist
+  pitching: ModeSelection               // persist
+}
+
+ModeSelection = {
+  leagueA / leagueB: 'AL' | 'NL'
+  teamA / teamB: number | null
+  playerA / playerB: number | null
+}
 ```
-mode             # 'batting' | 'pitching'
-layout           # 'v1' | 'v2' | 'v3'
-theme            # 'light' | 'dark'
-playerA / playerB
-yearA / yearB
-leagueA / leagueB    # 'AL' | 'NL' | 'ALL'
-teamA / teamB        # team id 或 'ALL'
-```
 
-mode 切換時要分別保留打者狀態跟投手狀態（避免從投手切回打者後 reset）。
+打者與投手的選擇互相隔離；切 mode 時讀對應 mode 的選擇。
 
-localStorage key 命名：待定。
+### 種子球員
 
-### 預設值
-
-| Key | 打者預設 | 投手預設 |
+| Mode | A 側 | B 側 |
 |---|---|---|
-| playerA | Shohei Ohtani | Tarik Skubal |
-| playerB | Aaron Judge | Paul Skenes |
-| yearA / yearB | 當前年 / 當前年 | 當前年 / 當前年 |
-| leagueA / leagueB | ALL / ALL | ALL / ALL |
-| teamA / teamB | ALL / ALL | ALL / ALL |
+| 打者 | 美聯 / NYY (147) / Aaron Judge (592450) | 國聯 / LAD (119) / Shohei Ohtani (660271) |
+| 投手 | 美聯 / DET (116) / Tarik Skubal (669373) | 國聯 / PIT (134) / Paul Skenes (694973) |
 
-共用：layout = `v1`、theme = `light`
+僅當「該 mode 的 localStorage 為空」才套用種子。使用者主動清空（例如年份切到無資料、球員下拉清空）後，重整不會被種子覆蓋。
 
-## 配對規則
+## 使用者流程
 
-- 跨聯盟、跨球隊、同隊、同人都不擋（先放寬）
-- 打者只能跟打者比、投手只能跟投手比
+### 載入
+
+1. router 解析 mode（URL）
+2. store 還原 season 與兩 mode 的選擇（localStorage）
+3. ScoreboardLayout onMounted：
+   - 抓 teams（依 season）
+   - 從 store 還原當前 mode 的選擇到本地 ref
+   - 該 mode 完全空 → 套種子
+   - 依當前 selection 跑載入流程：roster → 過濾不在 roster 的球員 → stats + person
+
+### 操作
+
+| 行為 | 處理 |
+|---|---|
+| 切 mode（batting ↔ pitching） | router.push → store.mode 變 → persist 舊 mode 的 ref → hydrate 新 mode → 若空套種子 → load |
+| 切 league（AL ↔ NL） | 該側球隊清空 |
+| 切球隊 | 該側球員清空、roster 重抓 |
+| 切球員 | 該側 stats、person、頭像 loaded 狀態重抓／重置 |
+| 切年份 | 兩側 roster 重抓 → 原球員不在新 roster 則清空 → stats 重抓 |
+| 任一選擇值變動 | 自動 persist 寫回 store 對應 mode |
+
+### 配對規則
+
+- 跨聯盟、跨球隊、同人都允許
+- 打者只能在打者池選；投手只能在投手池選（依 `position.abbreviation`，TWP 兩邊都會出現）
+
+## UI 結構
+
+目前只實作「記分板」一個版型（其他版型暫隱藏，留待後續）。
+
+### 控制列
+
+| 項目 | UI |
+|---|---|
+| Mode 切換 | 膠囊按鈕（打者 BATTING / 投手 PITCHING），全頁共用 |
+| 年份 | 下拉選單，桌機在記分板中央、手機在 mode 切換下方 |
+| Layout 切換 | 暫隱藏（`v-if="false"`） |
+| 聯盟 | 膠囊按鈕（美聯 / 國聯），A 側左、B 側右 |
+| 球隊 | 下拉選單，初始顯示「請選擇球隊」（disabled），選項用中文全名 |
+| 球員 | 下拉選單，初始顯示「請選擇球員」（disabled），跟著 mode 過濾（純投手 / 野手 + TWP） |
+
+### Hero 區
+
+- 桌機：頭像 + 名字 + meta 三欄排列（A | VS | B）
+- 手機：A 與 B 各自垂直堆疊置中，左右各佔一欄
+
+頭像：
+- 載入中 → skeleton（米色圓 + animate-pulse）
+- 載入完 → MLB silo 透明背景圖
+- 沒選球員 → 空頭像 SVG（FB 風格灰人形）
+
+Meta 行：背號 · 左／右打投 · 身高（公分）。沒選球員時整行隱藏。
+
+### Stats 區
+
+依 mode 顯示不同欄位、勝者標 grass 色 W 圖示。沒選球員或無資料 → 顯示 `-`。
+
+**打者 (11 項)**：AVG、H、HR、RBI、R、SB、OBP、BB、OPS、SLG、SO（SO 越低越好）
+
+**投手 (14 項)**：G、GS、W、L、IP、ERA、WHIP、OBA、HLD、SV、K、BB、HR、H（ERA、WHIP、OBA、L、BB、HR、H 越低越好）
 
 ## 邊界 / 例外
 
 | 情境 | 處理方式 |
 |---|---|
-| 球員某年沒上場 / 沒資料 | 該欄位顯示 `—` |
-| API 載入中 | Skeleton（不要轉圈） |
-| API 失敗 | 待定 |
-| 球員無 headshot | Fallback 到首字母圓形徽章（設計稿原本的樣式） |
-| 球員資料部分欄位缺失 | 該欄位顯示 `—`，不擋整體比較 |
+| 球員某年沒上場 / 數據缺失 | 該欄位顯示 `-` |
+| Headshot 載入中 | Skeleton（米色 + animate-pulse） |
+| 球員不在當前 season 的 roster | 球員清空、頭像空頭像、meta 隱藏、stats 全 `-` |
+| API 失敗 | `console.error`、畫面維持空白 |
 
-## 暫不做（v1 不在範圍）
+## 資料層
 
-- 生涯累計統計
-- 球員搜尋（自動完成）
-- i18n / 中英切換
-- 折線圖（年度趨勢）
-- 球員照片授權處理（先用 MLB 提供的 headshot URL）
+詳細 endpoint 與欄位見 `./api.md`。重點：
+
+- Roster 用 `rosterType=40Man`（含 IL，傷兵期間也找得到）
+- Headshot 用 `headshot/silo`（透明背景）
+- 球員身高來自 `/people/{id}`，原始為英制（`6' 4"`），前端解析轉公分
+- 球隊中文 mapping 在 `src/constants/mlb-teams.ts`（id → 中文全名）
 
 ## 共用元件
 
-- `YearSelect`（`src/components/player-compare/common/YearSelect.vue`）
-  - `v-model` 接 `number`（年份）
-  - 內部生成 1876 ~ 當前年的選項，由新到舊
-  - 三種版型共用
+`YearSelect`（`src/components/player-compare/common/YearSelect.vue`）
+- `v-model` 接 `number`
+- 選項 1876 ~ 當前年，由新到舊
 
-## 待定項目（總表）
+## 暫不做（後續再加）
 
-- 投打 mode 的 UI 樣式
-- 版型切換按鈕的位置與樣式
-- 主題切換按鈕的位置與樣式
-- localStorage key 命名規則
-- API 失敗時的 UI 表現
-- 球員下拉的排序方式（背號 / 名字 / 球隊）
-- mode 切換是否動畫過渡
-- 年份下拉是否要限制在球員出道後（目前決定：不限制，1876 ~ 當前年全開）
+- v2 卡片版型、v3 球場版型
+- 深淺色主題
+- A、B 兩側獨立年份（跨年份比較）
+- 生涯累計統計
+- 球員搜尋（自動完成）
+- API 失敗的 UI 表現（目前只 console.error）
 
 ## 相關文件
 
 - API 串接細節：`./api.md`
-- 設計參考：handoff bundle（已收入 `/tmp/mlb-design/`，未進 git）
