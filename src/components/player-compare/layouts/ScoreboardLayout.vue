@@ -335,11 +335,20 @@ const BATTING_ROWS: StatRow[] = [
 ]
 
 const PITCHING_ROWS: StatRow[] = [
+  { key: 'gamesPlayed', labelEn: 'G', labelTw: '出賽' },
+  { key: 'gamesStarted', labelEn: 'GS', labelTw: '先發' },
   { key: 'wins', labelEn: 'W', labelTw: '勝場' },
+  { key: 'losses', labelEn: 'L', labelTw: '敗場', lowerIsBetter: true },
   { key: 'inningsPitched', labelEn: 'IP', labelTw: '局數' },
   { key: 'era', labelEn: 'ERA', labelTw: '防禦率', lowerIsBetter: true },
   { key: 'whip', labelEn: 'WHIP', labelTw: 'WHIP', lowerIsBetter: true },
+  { key: 'avg', labelEn: 'OBA', labelTw: '被打擊率', lowerIsBetter: true },
+  { key: 'holds', labelEn: 'HLD', labelTw: '中繼' },
+  { key: 'saves', labelEn: 'SV', labelTw: '救援' },
   { key: 'strikeOuts', labelEn: 'K', labelTw: '三振' },
+  { key: 'baseOnBalls', labelEn: 'BB', labelTw: '保送', lowerIsBetter: true },
+  { key: 'homeRuns', labelEn: 'HR', labelTw: '被全壘打', lowerIsBetter: true },
+  { key: 'hits', labelEn: 'H', labelTw: '被安打', lowerIsBetter: true },
 ]
 
 const toNumber = (v: string | number) =>
