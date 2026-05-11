@@ -14,9 +14,7 @@ import {
   DEFAULT_PITCHING_PAIR,
 } from '@/constants/player-compare'
 import { TEAM_NAMES_TW } from '@/constants/mlb-teams'
-import { usePlayerCompareStore, type Mode } from '@/stores/playerCompare'
-
-type League = 'AL' | 'NL'
+import { usePlayerCompareStore, type Mode, type League } from '@/stores/playerCompare'
 
 interface Team {
   id: number
@@ -72,13 +70,35 @@ const teams = ref<Team[]>([])
 const rosterA = ref<RosterItem[]>([])
 const rosterB = ref<RosterItem[]>([])
 
-const leagueA = ref<League>('NL')
-const leagueB = ref<League>('AL')
-
+const leagueA = ref<League>('AL')
+const leagueB = ref<League>('NL')
 const selectedTeamA = ref<number | null>(null)
 const selectedTeamB = ref<number | null>(null)
 const selectedPlayerA = ref<number | null>(null)
 const selectedPlayerB = ref<number | null>(null)
+
+// 把 ref 值寫回 store 對應 mode
+const persistSelection = (m: Mode) => {
+  store[m] = {
+    leagueA: leagueA.value,
+    leagueB: leagueB.value,
+    teamA: selectedTeamA.value,
+    teamB: selectedTeamB.value,
+    playerA: selectedPlayerA.value,
+    playerB: selectedPlayerB.value,
+  }
+}
+
+// 從 store 對應 mode 載入到 ref
+const hydrateFromStore = (m: Mode) => {
+  const s = store[m]
+  leagueA.value = s.leagueA
+  leagueB.value = s.leagueB
+  selectedTeamA.value = s.teamA
+  selectedTeamB.value = s.teamB
+  selectedPlayerA.value = s.playerA
+  selectedPlayerB.value = s.playerB
+}
 
 const statA = ref<Stat | null>(null)
 const statB = ref<Stat | null>(null)
@@ -219,47 +239,31 @@ watch(selectedPlayerB, (newId) => {
   reloadPerson(newId, personB)
 })
 
-const loadSeed = async (m: Mode) => {
+const isStoreEmpty = (m: Mode) => {
+  const s = store[m]
+  return s.teamA == null && s.teamB == null && s.playerA == null && s.playerB == null
+}
+
+const applySeed = (m: Mode) => {
   const pair = m === 'batting' ? DEFAULT_BATTING_PAIR : DEFAULT_PITCHING_PAIR
   leagueA.value = pair.a.league as League
   leagueB.value = pair.b.league as League
   selectedTeamA.value = pair.a.teamId
   selectedTeamB.value = pair.b.teamId
+  selectedPlayerA.value = pair.a.playerId
+  selectedPlayerB.value = pair.b.playerId
+}
+
+const loadCurrent = async () => {
+  // 從 store 當前 selection 跑完整載入流程（roster → 過濾不存在球員 → stats/person）
+  const teamAId = selectedTeamA.value
+  const teamBId = selectedTeamB.value
   const [rosterARes, rosterBRes] = await Promise.all([
-    fetchRoster(pair.a.teamId, season.value),
-    fetchRoster(pair.b.teamId, season.value),
+    teamAId != null ? fetchRoster(teamAId, season.value) : Promise.resolve({ roster: [] }),
+    teamBId != null ? fetchRoster(teamBId, season.value) : Promise.resolve({ roster: [] }),
   ])
   rosterA.value = rosterARes.roster ?? []
   rosterB.value = rosterBRes.roster ?? []
-  selectedPlayerA.value = pair.a.playerId
-  selectedPlayerB.value = pair.b.playerId
-  await Promise.all([
-    reloadStat(pair.a.playerId, statA),
-    reloadStat(pair.b.playerId, statB),
-    reloadPerson(pair.a.playerId, personA),
-    reloadPerson(pair.b.playerId, personB),
-  ])
-}
-
-watch(mode, async (m) => {
-  if (initialLoad) return
-  initialLoad = true
-  try {
-    await loadSeed(m)
-  } catch (err) {
-    console.error(err)
-  } finally {
-    initialLoad = false
-  }
-})
-
-watch(season, async () => {
-  if (initialLoad) return
-  // 兩側 roster 重抓、若原球員不在新 roster → selectedPlayer = null
-  await Promise.all([
-    reloadRoster(selectedTeamA.value, rosterA),
-    reloadRoster(selectedTeamB.value, rosterB),
-  ])
   if (
     selectedPlayerA.value != null &&
     !rosterA.value.some((r) => r.person.id === selectedPlayerA.value)
@@ -272,18 +276,56 @@ watch(season, async () => {
   ) {
     selectedPlayerB.value = null
   }
-  // 重抓兩側 stats（若 selectedPlayer 還在 → 抓新年份；若被清空 → reloadStat 內部會設成 null）
   await Promise.all([
     reloadStat(selectedPlayerA.value, statA),
     reloadStat(selectedPlayerB.value, statB),
+    reloadPerson(selectedPlayerA.value, personA),
+    reloadPerson(selectedPlayerB.value, personB),
   ])
+}
+
+// 任一選擇值變動 → 寫回 store 對應 mode
+watch(
+  [leagueA, leagueB, selectedTeamA, selectedTeamB, selectedPlayerA, selectedPlayerB],
+  () => {
+    persistSelection(mode.value)
+  },
+)
+
+watch(mode, async (m, oldM) => {
+  if (initialLoad) return
+  initialLoad = true
+  try {
+    if (oldM) persistSelection(oldM)
+    hydrateFromStore(m)
+    if (isStoreEmpty(m)) applySeed(m)
+    await loadCurrent()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    initialLoad = false
+  }
+})
+
+watch(season, async () => {
+  if (initialLoad) return
+  initialLoad = true
+  try {
+    await loadCurrent()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    initialLoad = false
+  }
 })
 
 onMounted(async () => {
   try {
     const teamsRes = await fetchTeams(season.value)
     teams.value = teamsRes.teams ?? []
-    await loadSeed(mode.value)
+    hydrateFromStore(mode.value)
+    if (isStoreEmpty(mode.value)) applySeed(mode.value)
+    await loadCurrent()
   } catch (err) {
     console.error(err)
   } finally {

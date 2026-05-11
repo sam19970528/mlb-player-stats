@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
 import ScoreboardLayout from '@/components/player-compare/layouts/ScoreboardLayout.vue'
 import YearSelect from '@/components/player-compare/common/YearSelect.vue'
-import { usePlayerCompareStore } from '@/stores/playerCompare'
+import { usePlayerCompareStore, type Mode } from '@/stores/playerCompare'
 
 type Layout = 'v1' | 'v2' | 'v3'
 type League = 'AL' | 'NL'
@@ -13,8 +15,26 @@ const leagueB = 'AL' as League
 const store = usePlayerCompareStore()
 const { mode, season } = storeToRefs(store)
 
+const route = useRoute()
+const router = useRouter()
+
 const playerA = { fullName: '大谷 翔平', team: 'LAD', number: 17, accent: 'grass' as const }
 const playerB = { fullName: 'Aaron Judge', team: 'NYY', number: 99, accent: 'dirt' as const }
+
+// URL → store（mode only）
+const syncFromRoute = () => {
+  const routeMode = (route.meta.mode as Mode | undefined) ?? 'batting'
+  if (mode.value !== routeMode) mode.value = routeMode
+}
+syncFromRoute()
+watch(() => route.meta.mode, syncFromRoute)
+
+// store → URL（mode only）
+watch(mode, (m) => {
+  if (route.meta.mode !== m) {
+    router.push({ name: m })
+  }
+})
 </script>
 
 <template>
