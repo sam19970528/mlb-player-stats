@@ -65,7 +65,7 @@ const playerB = { fullName: 'Aaron Judge', team: 'NYY', number: 99, accent: 'dir
         </div>
 
         <!-- Layout toggle -->
-        <div class="relative grid grid-cols-3 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1 md:justify-self-end">
+        <div v-if="false" class="relative grid grid-cols-3 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1 md:justify-self-end">
           <span
             class="pointer-events-none absolute bottom-1 top-1 rounded-full bg-ink shadow-[0_2px_8px_-2px_rgba(0,0,0,0.25)] transition-[left] duration-300 ease-out"
             :style="{
