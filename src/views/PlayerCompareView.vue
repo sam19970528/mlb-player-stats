@@ -32,7 +32,7 @@ watch(() => route.meta.mode, syncFromRoute)
 // store → URL（mode only）
 watch(mode, (m) => {
   if (route.meta.mode !== m) {
-    router.push({ name: m })
+    router.replace({ name: m })
   }
 })
 </script>
