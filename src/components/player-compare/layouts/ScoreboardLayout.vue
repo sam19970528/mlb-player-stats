@@ -104,7 +104,7 @@ const rosterOptionsB = computed(() =>
 )
 
 const headshotUrl = (id: number) =>
-  `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${id}/headshot/67/current.png`
+  `https://img.mlbstatic.com/mlb-photos/image/upload/w_213,q_auto:best/v1/people/${id}/headshot/silo/current.png`
 
 const buildPlayerView = (
   roster: RosterItem[],
@@ -488,7 +488,7 @@ const stats = computed(() => {
       <div class="relative mb-5 grid grid-cols-2 items-center gap-3 md:mb-7 md:grid-cols-[1fr_100px_1fr] md:gap-6">
         <!-- Player A -->
         <div class="flex flex-col items-center gap-2 text-center md:flex-row md:gap-5 md:text-left">
-          <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-grass shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] md:h-22 md:w-22">
+          <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full md:h-22 md:w-22">
             <img
               v-if="playerA"
               :src="playerA.headshot"
@@ -506,17 +506,11 @@ const stats = computed(() => {
                 d="M32 40c-11 0-20 7-20 16v8h40v-8c0-9-9-16-20-16z"
               />
             </svg>
-            <span
-              v-if="playerA"
-              class="absolute -bottom-1.5 -right-1.5 rounded border-2 border-white bg-ink px-1 py-0.5 font-mono text-[9px] text-paper md:-bottom-2 md:-right-2 md:px-1.5 md:text-[11px]"
-            >
-              #{{ playerA.jerseyNumber }}
-            </span>
           </div>
           <div class="min-w-0 md:whitespace-nowrap">
             <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerA?.fullName ?? '-' }}</h3>
             <div v-if="playerAMeta" class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
-              {{ handLabel(playerAMeta.bats) }}打{{ handLabel(playerAMeta.throws) }}投 · {{ playerAMeta.height }}
+              <span v-if="playerA">#{{ playerA.jerseyNumber }} · </span>{{ handLabel(playerAMeta.bats) }}打{{ handLabel(playerAMeta.throws) }}投 · {{ playerAMeta.height }}
             </div>
           </div>
         </div>
@@ -529,7 +523,7 @@ const stats = computed(() => {
 
         <!-- Player B -->
         <div class="flex flex-col items-center gap-2 text-center md:flex-row-reverse md:gap-5 md:text-right">
-          <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-dirt shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] md:h-22 md:w-22">
+          <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full md:h-22 md:w-22">
             <img
               v-if="playerB"
               :src="playerB.headshot"
@@ -547,17 +541,11 @@ const stats = computed(() => {
                 d="M32 40c-11 0-20 7-20 16v8h40v-8c0-9-9-16-20-16z"
               />
             </svg>
-            <span
-              v-if="playerB"
-              class="absolute -bottom-1.5 -right-1.5 rounded border-2 border-white bg-ink px-1 py-0.5 font-mono text-[9px] text-paper md:-bottom-2 md:-right-2 md:px-1.5 md:text-[11px]"
-            >
-              #{{ playerB.jerseyNumber }}
-            </span>
           </div>
           <div class="min-w-0">
             <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerB?.fullName ?? '-' }}</h3>
             <div v-if="playerBMeta" class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
-              {{ handLabel(playerBMeta.bats) }}打{{ handLabel(playerBMeta.throws) }}投 · {{ playerBMeta.height }}
+              <span v-if="playerB">#{{ playerB.jerseyNumber }} · </span>{{ handLabel(playerBMeta.bats) }}打{{ handLabel(playerBMeta.throws) }}投 · {{ playerBMeta.height }}
             </div>
           </div>
         </div>
