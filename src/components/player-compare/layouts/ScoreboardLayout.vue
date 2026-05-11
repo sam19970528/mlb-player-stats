@@ -47,7 +47,7 @@ interface PitchingStat {
 type Stat = BattingStat | PitchingStat
 
 const store = usePlayerCompareStore()
-const { mode } = storeToRefs(store)
+const { mode, season } = storeToRefs(store)
 
 const filterRosterByMode = (roster: RosterItem[], m: Mode) => {
   if (m === 'batting') {
@@ -58,8 +58,6 @@ const filterRosterByMode = (roster: RosterItem[], m: Mode) => {
       r.position.abbreviation === 'P' || r.position.abbreviation === 'TWP',
   )
 }
-
-const season = ref(new Date().getFullYear())
 
 const teams = ref<Team[]>([])
 const rosterA = ref<RosterItem[]>([])
@@ -309,9 +307,9 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <section class="bg-paper p-4 font-sans text-ink md:px-12 md:py-10">
+  <section class="bg-paper p-2 font-sans text-ink md:px-12 md:py-10">
     <!-- Scoreboard card -->
-    <div class="relative overflow-hidden rounded-2xl border border-hairline bg-white p-6 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.12)] md:p-9">
+    <div class="relative overflow-hidden rounded-2xl border border-hairline bg-white p-3 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.12)] md:p-9">
       <!-- decorative gradient grain -->
       <div
         class="pointer-events-none absolute inset-0"
@@ -322,9 +320,9 @@ const stats = computed(() => {
       />
 
       <!-- Selectors row — aligned with hero columns -->
-      <div class="relative mb-5 grid grid-cols-[1fr_50px_1fr] items-center gap-2 md:grid-cols-[1fr_100px_1fr] md:gap-6">
+      <div class="relative mb-5 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-start gap-x-4 gap-y-3 md:grid-cols-[1fr_100px_1fr] md:items-center md:gap-6">
         <!-- Player A selectors -->
-        <div class="flex flex-wrap items-center justify-start gap-2">
+        <div class="flex w-full min-w-0 max-w-[130px] flex-col items-start gap-2 md:max-w-none md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-start">
           <!-- League segmented (AL / NL) -->
           <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
             <span
@@ -351,10 +349,10 @@ const stats = computed(() => {
               NL
             </button>
           </div>
-          <div class="relative inline-flex h-8.5 w-[180px] items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+          <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
             <select
               v-model="selectedTeamA"
-              class="w-full appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
+              class="w-full min-w-0 max-w-full appearance-none truncate border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
             >
               <option :value="null" disabled>請選擇球隊</option>
               <option v-for="t in teamOptionsA" :key="t.id" :value="t.id">
@@ -363,10 +361,10 @@ const stats = computed(() => {
             </select>
             <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
           </div>
-          <div class="relative inline-flex h-8.5 w-[180px] items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+          <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
             <select
               v-model="selectedPlayerA"
-              class="w-full appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
+              class="w-full min-w-0 max-w-full appearance-none truncate border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
             >
               <option :value="null" disabled>請選擇球員</option>
               <option v-for="r in rosterOptionsA" :key="r.person.id" :value="r.person.id">
@@ -377,13 +375,13 @@ const stats = computed(() => {
           </div>
         </div>
 
-        <!-- Year (center, aligned with VS) -->
-        <div class="flex items-center justify-center">
+        <!-- Year (center, aligned with VS) - desktop only -->
+        <div class="hidden items-center justify-center md:flex">
           <YearSelect v-model="season" />
         </div>
 
         <!-- Player B selectors -->
-        <div class="flex flex-wrap items-center justify-end gap-2">
+        <div class="flex w-full min-w-0 max-w-[130px] flex-col items-end gap-2 justify-self-end md:max-w-none md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end md:justify-self-auto">
           <!-- League segmented (AL / NL) -->
           <div class="relative grid grid-cols-2 rounded-full border border-[#d8d6c8] bg-[#f4f3ec] p-1">
             <span
@@ -410,10 +408,10 @@ const stats = computed(() => {
               NL
             </button>
           </div>
-          <div class="relative inline-flex h-8.5 w-[180px] items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+          <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
             <select
               v-model="selectedTeamB"
-              class="w-full appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
+              class="w-full min-w-0 max-w-full appearance-none truncate border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
             >
               <option :value="null" disabled>請選擇球隊</option>
               <option v-for="t in teamOptionsB" :key="t.id" :value="t.id">
@@ -422,10 +420,10 @@ const stats = computed(() => {
             </select>
             <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
           </div>
-          <div class="relative inline-flex h-8.5 w-[180px] items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3">
+          <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
             <select
               v-model="selectedPlayerB"
-              class="w-full appearance-none border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
+              class="w-full min-w-0 max-w-full appearance-none truncate border-0 bg-transparent pr-5 font-sans text-[13px] font-semibold text-ink outline-none"
             >
               <option :value="null" disabled>請選擇球員</option>
               <option v-for="r in rosterOptionsB" :key="r.person.id" :value="r.person.id">
@@ -438,9 +436,9 @@ const stats = computed(() => {
       </div>
 
       <!-- Hero: player A | VS | player B -->
-      <div class="relative mb-5 grid grid-cols-[1fr_50px_1fr] items-center gap-2 md:mb-7 md:grid-cols-[1fr_100px_1fr] md:gap-6">
+      <div class="relative mb-5 grid grid-cols-2 items-center gap-3 md:mb-7 md:grid-cols-[1fr_100px_1fr] md:gap-6">
         <!-- Player A -->
-        <div class="flex items-center gap-3 md:gap-5">
+        <div class="flex flex-col items-center gap-2 text-center md:flex-row md:gap-5 md:text-left">
           <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-grass shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] md:h-22 md:w-22">
             <img
               v-if="playerA"
@@ -466,7 +464,7 @@ const stats = computed(() => {
               #{{ playerA.jerseyNumber }}
             </span>
           </div>
-          <div class="min-w-0 whitespace-nowrap">
+          <div class="min-w-0 md:whitespace-nowrap">
             <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerA?.fullName ?? '-' }}</h3>
             <div class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
               {{ handLabel(playerAMeta.bats) }}打{{ handLabel(playerAMeta.throws) }}投 · {{ playerAMeta.height }}
@@ -475,13 +473,13 @@ const stats = computed(() => {
         </div>
 
         <!-- VS -->
-        <div class="text-center">
-          <div class="text-lg font-extrabold tracking-tighter opacity-85 md:text-4xl">VS</div>
-          <div class="mt-0.5 font-mono text-[9px] tracking-[0.22em] text-muted md:mt-1 md:text-[10px]">SEASON {{ season }}</div>
+        <div class="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center md:static md:translate-x-0 md:translate-y-0">
+          <div class="rounded-full bg-white px-2 py-1 text-sm font-extrabold tracking-tighter opacity-90 shadow-sm md:bg-transparent md:p-0 md:text-4xl md:shadow-none">VS</div>
+          <div class="mt-1 hidden font-mono text-[10px] tracking-[0.22em] text-muted md:block">SEASON {{ season }}</div>
         </div>
 
         <!-- Player B -->
-        <div class="flex flex-row-reverse items-center gap-2 text-right md:gap-5">
+        <div class="flex flex-col items-center gap-2 text-center md:flex-row-reverse md:gap-5 md:text-right">
           <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full bg-dirt shadow-[inset_0_-6px_0_rgba(0,0,0,0.18)] md:h-22 md:w-22">
             <img
               v-if="playerB"

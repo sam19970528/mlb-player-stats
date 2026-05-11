@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import ScoreboardLayout from '@/components/player-compare/layouts/ScoreboardLayout.vue'
+import YearSelect from '@/components/player-compare/common/YearSelect.vue'
 import { usePlayerCompareStore } from '@/stores/playerCompare'
 
 type Layout = 'v1' | 'v2' | 'v3'
@@ -10,11 +11,10 @@ const leagueA = 'AL' as League
 const leagueB = 'AL' as League
 
 const store = usePlayerCompareStore()
-const { mode } = storeToRefs(store)
+const { mode, season } = storeToRefs(store)
 
 const playerA = { fullName: '大谷 翔平', team: 'LAD', number: 17, accent: 'grass' as const }
 const playerB = { fullName: 'Aaron Judge', team: 'NYY', number: 99, accent: 'dirt' as const }
-const season = '2025'
 </script>
 
 <template>
@@ -100,6 +100,11 @@ const season = '2025'
             球場
           </button>
         </div>
+      </div>
+
+      <!-- Year (mobile only — desktop's year stays inside Scoreboard) -->
+      <div class="mt-3 flex justify-center md:hidden">
+        <YearSelect v-model="season" />
       </div>
 
       <!-- Bottom row: Player A | YEAR | Player B — hidden, selectors moved into ScoreboardLayout -->
