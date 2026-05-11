@@ -324,8 +324,14 @@ const BATTING_ROWS: StatRow[] = [
   { key: 'avg', labelEn: 'AVG', labelTw: '打擊率' },
   { key: 'hits', labelEn: 'H', labelTw: '安打' },
   { key: 'homeRuns', labelEn: 'HR', labelTw: '全壘打' },
+  { key: 'rbi', labelEn: 'RBI', labelTw: '打點' },
+  { key: 'runs', labelEn: 'R', labelTw: '得分' },
+  { key: 'stolenBases', labelEn: 'SB', labelTw: '盜壘' },
+  { key: 'obp', labelEn: 'OBP', labelTw: '上壘率' },
   { key: 'baseOnBalls', labelEn: 'BB', labelTw: '四壞球' },
   { key: 'ops', labelEn: 'OPS', labelTw: 'OPS' },
+  { key: 'slg', labelEn: 'SLG', labelTw: '長打率' },
+  { key: 'strikeOuts', labelEn: 'SO', labelTw: '三振', lowerIsBetter: true },
 ]
 
 const PITCHING_ROWS: StatRow[] = [
