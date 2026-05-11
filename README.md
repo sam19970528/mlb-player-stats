@@ -16,13 +16,13 @@ Demo：<https://mlb-player-stats.vercel.app>
 
 ## 技術棧
 
-- Vue 3 (`<script setup lang="ts">`)
+- Vue 3
 - Vite
 - TypeScript
 - UnoCSS
 - Pinia + pinia-plugin-persistedstate
 - vue-router
-- MLB Stats API（公開、免 key、CORS 全開）
+- MLB Stats API
 
 ## 啟動
 
