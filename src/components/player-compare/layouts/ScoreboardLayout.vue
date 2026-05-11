@@ -86,6 +86,9 @@ const statB = ref<Stat | null>(null)
 const personA = ref<Person | null>(null)
 const personB = ref<Person | null>(null)
 
+const headshotALoaded = ref(false)
+const headshotBLoaded = ref(false)
+
 const leagueFullName = (l: League) =>
   l === 'AL' ? 'American League' : 'National League'
 
@@ -203,12 +206,14 @@ const reloadPerson = async (
 }
 
 watch(selectedPlayerA, (newId) => {
+  headshotALoaded.value = false
   if (initialLoad) return
   reloadStat(newId, statA)
   reloadPerson(newId, personA)
 })
 
 watch(selectedPlayerB, (newId) => {
+  headshotBLoaded.value = false
   if (initialLoad) return
   reloadStat(newId, statB)
   reloadPerson(newId, personB)
@@ -489,11 +494,17 @@ const stats = computed(() => {
         <!-- Player A -->
         <div class="flex flex-col items-center gap-2 text-center md:flex-row md:gap-5 md:text-left">
           <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full md:h-22 md:w-22">
+            <div
+              v-if="playerA && !headshotALoaded"
+              class="h-full w-full animate-pulse rounded-full bg-[#e4e2d4]"
+            />
             <img
               v-if="playerA"
               :src="playerA.headshot"
               :alt="playerA.fullName"
               class="h-full w-full object-cover"
+              :class="{ 'absolute inset-0 opacity-0': !headshotALoaded }"
+              @load="headshotALoaded = true"
             />
             <svg
               v-else
@@ -524,11 +535,17 @@ const stats = computed(() => {
         <!-- Player B -->
         <div class="flex flex-col items-center gap-2 text-center md:flex-row-reverse md:gap-5 md:text-right">
           <div class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-full md:h-22 md:w-22">
+            <div
+              v-if="playerB && !headshotBLoaded"
+              class="h-full w-full animate-pulse rounded-full bg-[#e4e2d4]"
+            />
             <img
               v-if="playerB"
               :src="playerB.headshot"
               :alt="playerB.fullName"
               class="h-full w-full object-cover"
+              :class="{ 'absolute inset-0 opacity-0': !headshotBLoaded }"
+              @load="headshotBLoaded = true"
             />
             <svg
               v-else
