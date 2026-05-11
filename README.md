@@ -2,6 +2,8 @@
 
 兩位 MLB 球員並列比較數據的小工具，台灣球迷視角。
 
+Demo：<https://mlb-player-stats.vercel.app>
+
 ## 主要特點
 
 - 打者 / 投手雙模式，各自獨立記憶 A、B 兩側選擇
