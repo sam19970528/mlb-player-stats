@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import YearSelect from '@/components/player-compare/common/YearSelect.vue'
 import {
   fetchBattingStats,
+  fetchPerson,
   fetchPitchingStats,
   fetchRoster,
   fetchTeams,
@@ -12,6 +13,7 @@ import {
   DEFAULT_BATTING_PAIR,
   DEFAULT_PITCHING_PAIR,
 } from '@/constants/player-compare'
+import { TEAM_NAMES_TW } from '@/constants/mlb-teams'
 import { usePlayerCompareStore, type Mode } from '@/stores/playerCompare'
 
 type League = 'AL' | 'NL'
@@ -34,6 +36,13 @@ interface BattingStat {
   homeRuns: number
   baseOnBalls: number
   ops: string
+}
+
+interface Person {
+  id: number
+  batSide?: { code: string }
+  pitchHand?: { code: string }
+  height?: string
 }
 
 interface PitchingStat {
@@ -73,6 +82,9 @@ const selectedPlayerB = ref<number | null>(null)
 
 const statA = ref<Stat | null>(null)
 const statB = ref<Stat | null>(null)
+
+const personA = ref<Person | null>(null)
+const personB = ref<Person | null>(null)
 
 const leagueFullName = (l: League) =>
   l === 'AL' ? 'American League' : 'National League'
@@ -173,14 +185,33 @@ watch(selectedTeamB, async (newId) => {
   await reloadRoster(newId, rosterB)
 })
 
+const reloadPerson = async (
+  playerId: number | null,
+  personRef: typeof personA,
+) => {
+  if (playerId == null) {
+    personRef.value = null
+    return
+  }
+  try {
+    const res = await fetchPerson(playerId)
+    personRef.value = res.people?.[0] ?? null
+  } catch (err) {
+    console.error(err)
+    personRef.value = null
+  }
+}
+
 watch(selectedPlayerA, (newId) => {
   if (initialLoad) return
   reloadStat(newId, statA)
+  reloadPerson(newId, personA)
 })
 
 watch(selectedPlayerB, (newId) => {
   if (initialLoad) return
   reloadStat(newId, statB)
+  reloadPerson(newId, personB)
 })
 
 const loadSeed = async (m: Mode) => {
@@ -200,6 +231,8 @@ const loadSeed = async (m: Mode) => {
   await Promise.all([
     reloadStat(pair.a.playerId, statA),
     reloadStat(pair.b.playerId, statB),
+    reloadPerson(pair.a.playerId, personA),
+    reloadPerson(pair.b.playerId, personB),
   ])
 }
 
@@ -253,11 +286,27 @@ onMounted(async () => {
   }
 })
 
-// 暫時保留：左右打 / 身高 stats API 沒有，先寫死
-const playerAMeta = { bats: 'L', throws: 'R', height: '193cm' }
-const playerBMeta = { bats: 'R', throws: 'R', height: '201cm' }
-
 const handLabel = (hand: string) => (hand === 'L' ? '左' : '右')
+
+// "6' 4\"" → 193cm
+const heightToCm = (h: string) => {
+  const m = h.match(/(\d+)'\s*(\d+)/)
+  if (!m) return h
+  const cm = Math.round(Number(m[1]) * 30.48 + Number(m[2]) * 2.54)
+  return `${cm}cm`
+}
+
+const buildMeta = (p: Person | null) => {
+  if (!p) return null
+  return {
+    bats: p.batSide?.code ?? '',
+    throws: p.pitchHand?.code ?? '',
+    height: p.height ? heightToCm(p.height) : '',
+  }
+}
+
+const playerAMeta = computed(() => buildMeta(personA.value))
+const playerBMeta = computed(() => buildMeta(personB.value))
 
 interface StatRow {
   key: string
@@ -338,7 +387,7 @@ const stats = computed(() => {
               :class="leagueA === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
               @click="leagueA = 'AL'"
             >
-              AL
+              美聯
             </button>
             <button
               type="button"
@@ -346,7 +395,7 @@ const stats = computed(() => {
               :class="leagueA === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
               @click="leagueA = 'NL'"
             >
-              NL
+              國聯
             </button>
           </div>
           <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
@@ -356,7 +405,7 @@ const stats = computed(() => {
             >
               <option :value="null" disabled>請選擇球隊</option>
               <option v-for="t in teamOptionsA" :key="t.id" :value="t.id">
-                {{ t.name }}
+                {{ TEAM_NAMES_TW[t.id] ?? t.name }}
               </option>
             </select>
             <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
@@ -397,7 +446,7 @@ const stats = computed(() => {
               :class="leagueB === 'AL' ? 'text-paper' : 'text-[#5a5a52]'"
               @click="leagueB = 'AL'"
             >
-              AL
+              美聯
             </button>
             <button
               type="button"
@@ -405,7 +454,7 @@ const stats = computed(() => {
               :class="leagueB === 'NL' ? 'text-paper' : 'text-[#5a5a52]'"
               @click="leagueB = 'NL'"
             >
-              NL
+              國聯
             </button>
           </div>
           <div class="relative inline-flex h-8.5 w-full min-w-0 items-center rounded-lg border border-[#d8d6c8] bg-[#f4f3ec] px-3 md:w-[180px] md:flex-none">
@@ -415,7 +464,7 @@ const stats = computed(() => {
             >
               <option :value="null" disabled>請選擇球隊</option>
               <option v-for="t in teamOptionsB" :key="t.id" :value="t.id">
-                {{ t.name }}
+                {{ TEAM_NAMES_TW[t.id] ?? t.name }}
               </option>
             </select>
             <span class="pointer-events-none absolute right-2.5 text-[10px] text-[#7a7a70]">▼</span>
@@ -466,7 +515,7 @@ const stats = computed(() => {
           </div>
           <div class="min-w-0 md:whitespace-nowrap">
             <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerA?.fullName ?? '-' }}</h3>
-            <div class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
+            <div v-if="playerAMeta" class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
               {{ handLabel(playerAMeta.bats) }}打{{ handLabel(playerAMeta.throws) }}投 · {{ playerAMeta.height }}
             </div>
           </div>
@@ -507,7 +556,7 @@ const stats = computed(() => {
           </div>
           <div class="min-w-0">
             <h3 class="text-sm font-bold leading-tight tracking-tight md:text-2xl">{{ playerB?.fullName ?? '-' }}</h3>
-            <div class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
+            <div v-if="playerBMeta" class="mt-1 font-mono text-[10px] tracking-wider text-muted md:text-[11px]">
               {{ handLabel(playerBMeta.bats) }}打{{ handLabel(playerBMeta.throws) }}投 · {{ playerBMeta.height }}
             </div>
           </div>

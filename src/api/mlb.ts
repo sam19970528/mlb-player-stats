@@ -33,3 +33,8 @@ export function fetchPitchingStats(playerId: number, season: number) {
     `${BASE}/people/${playerId}/stats?stats=season&season=${season}&group=pitching`,
   )
 }
+
+// 取得球員基本資料（左右打、身高等）
+export function fetchPerson(playerId: number) {
+  return getJson(`${BASE}/people/${playerId}`)
+}
